@@ -50,9 +50,6 @@ cleanup() {
     if [ "$HAVE_WASH" = true ]; then
         wash down 2>/dev/null || true
     fi
-    if [ ! -z "$WASH_PID" ]; then
-        kill $WASH_PID 2>/dev/null || true
-    fi
     echo "✓ Stopped wasmCloud"
 
     echo -e "${GREEN}Cleanup complete${NC}"
@@ -146,9 +143,8 @@ echo ""
 if [ "$PROVIDER_BUILT" = true ] && [ "$HAVE_WASH" = true ]; then
     echo -e "${YELLOW}Starting wasmCloud host for full integration test...${NC}"
 
-    WASMCLOUD_LOG="/tmp/wasmcloud_host.log"
-    wash up > "$WASMCLOUD_LOG" 2>&1 &
-    WASH_PID=$!
+    WASMCLOUD_LOG="$HOME/.wash/downloads/wasmcloud.log"
+    wash up -d 2>&1
 
     echo "Waiting for host to be ready..."
     for i in {1..30}; do
