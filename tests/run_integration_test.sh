@@ -143,7 +143,8 @@ echo ""
 if [ "$PROVIDER_BUILT" = true ] && [ "$HAVE_WASH" = true ]; then
     echo -e "${YELLOW}Starting wasmCloud host for full integration test...${NC}"
 
-    WASMCLOUD_LOG="$HOME/.wash/downloads/wasmcloud.log"
+    # wasmcloud.log is created by wash up -d in the default wash downloads directory
+    WASMCLOUD_LOG="${WASH_DIR:-$HOME/.wash}/downloads/wasmcloud.log"
     wash up -d 2>&1
 
     echo "Waiting for host to be ready..."
