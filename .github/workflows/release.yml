@@ -1,0 +1,60 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  publish:
+    name: Build & Publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-wasip2
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install wash CLI
+        run: curl -s "https://packagecloud.io/install/repositories/wasmcloud/core/script.deb.sh" | sudo bash && sudo apt install wash
+
+      - name: Build provider
+        run: wash build
+
+      - name: Extract version from tag
+        id: version
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
+
+      - name: Push provider to GHCR (versioned)
+        env:
+          WASH_REG_USER: ${{ github.actor }}
+          WASH_REG_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          wash push ghcr.io/${{ github.repository_owner }}/sse-provider:${{ steps.version.outputs.version }} \
+            build/wasmcloud-provider-sse.par.gz
+
+      - name: Push provider to GHCR (latest)
+        env:
+          WASH_REG_USER: ${{ github.actor }}
+          WASH_REG_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          wash push --allow-latest \
+            ghcr.io/${{ github.repository_owner }}/sse-provider:latest \
+            build/wasmcloud-provider-sse.par.gz
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            build/*.par.gz
