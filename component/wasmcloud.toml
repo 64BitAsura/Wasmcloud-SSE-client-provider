@@ -1,0 +1,9 @@
+name = "Custom template test component"
+language = "rust"
+type = "component"
+
+[component]
+wasm_target = "wasm32-wasip2"
+wit_world = "component"
+build_command = "cargo build --release --target wasm32-wasip2"
+build_artifact = "target/wasm32-wasip2/release/custom_template_test_component.wasm"

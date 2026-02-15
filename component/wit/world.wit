@@ -1,0 +1,10 @@
+package wasmcloud:custom;
+
+world component {
+  // Import logging for processing data
+  import wasi:logging/logging@0.1.0-draft;
+
+  // Export the standard wasmcloud:messaging handler interface
+  // This allows the component to receive messages from the SSE provider
+  export wasmcloud:messaging/handler@0.2.0;
+}
