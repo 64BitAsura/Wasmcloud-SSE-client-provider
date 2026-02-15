@@ -1,0 +1,9 @@
+package wasmcloud:sse;
+
+// The provider world for the SSE capability provider.
+// Uses the standard wasmcloud:messaging interface to forward
+// SSE events to components as broker-messages.
+world provider {
+    // Import the standard messaging handler to forward messages to components
+    import wasmcloud:messaging/handler@0.2.0;
+}

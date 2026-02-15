@@ -1,0 +1,37 @@
+apiVersion: core.oam.dev/v1beta1
+kind: Application
+metadata:
+  name: sse-provider-app
+  annotations:
+    version: v0.0.1
+    description: 'SSE provider with a test component for receiving SSE events'
+spec:
+  components:
+    - name: test-component
+      type: component
+      properties:
+        image: file://./component/target/wasm32-wasip2/release/custom_template_test_component_s.wasm
+      traits:
+        - type: spreadscaler
+          properties:
+            instances: 1
+        # Link from this component (source) to the provider (target)
+        - type: link
+          properties:
+            target:
+              name: sse-provider
+              config:
+                - name: sse-config
+                  properties:
+                    sse_url: http://127.0.0.1:8765/events
+                    max_reconnect_attempts: "10"
+                    initial_reconnect_delay_ms: "1000"
+            namespace: wasmcloud
+            package: messaging
+            interfaces: [handler]
+
+    - name: sse-provider
+      type: capability
+      properties:
+        image: file://./build/wasmcloud-provider-sse.par.gz
+        id: sse-provider
