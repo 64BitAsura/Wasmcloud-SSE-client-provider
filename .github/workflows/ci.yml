@@ -1,0 +1,92 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check:
+    name: Check & Lint
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-wasip2
+          components: clippy, rustfmt
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Clippy (provider)
+        run: cargo clippy --release -- -D warnings
+
+      - name: Clippy (component)
+        run: cargo clippy --release --target wasm32-wasip2 --manifest-path component/Cargo.toml -- -D warnings
+
+  build:
+    name: Build
+    runs-on: self-hosted
+    needs: check
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-wasip2
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install wash CLI
+        run: curl -s "https://packagecloud.io/install/repositories/wasmcloud/core/script.deb.sh" | sudo bash && sudo apt install wash
+
+      - name: Build provider
+        run: wash build
+
+      - name: Build component
+        run: wash build -p ./component
+
+      - name: Upload provider archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: provider-archive
+          path: build/*.par.gz
+
+      - name: Upload component
+        uses: actions/upload-artifact@v4
+        with:
+          name: component
+          path: component/build/*.wasm
+
+  test:
+    name: Integration Test
+    runs-on: self-hosted
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-wasip2
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install wash CLI
+        run: curl -s "https://packagecloud.io/install/repositories/wasmcloud/core/script.deb.sh" | sudo bash && sudo apt install wash
+
+      - name: Run integration test
+        run: ./tests/run_integration_test.sh
